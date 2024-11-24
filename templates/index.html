@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop&Snow</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #e0f2f7; /* Light blue background */
+            color: #333;
+        }
+        #map {
+            height: 500px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        header {
+            background-color: #00264d; /* Dark blue header */
+            color: white;
+            padding: 20px 0;
+            text-align: center; /* Center the title */
+        }
+
+        header h1 {
+            margin: 0; /* Remove default margins */
+            font-size: 2.5em; /* Adjust title size as needed */
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0; /* Space below header */
+            text-align: left; /* Align menu items to the left */
+        }
+
+        nav li {
+            display: inline;
+            margin-right: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+        }
+
+        section {
+            padding: 20px;
+        }
+
+        #map {
+            height: 400px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+
+        .about-content {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stop&Snow</h1>
+    </header>
+
+    <section>
+        <h2>Карта</h2>
+        <div id="map"></div>
+    </section>
+
+    <section>
+        <h2>О продукте</h2>
+        <div class="about-content">
+            <p>Сервис Stop&Snow - это инновационное решение в сфере уборки снега. На сайте представлен фрагмент будущего веб-ресурса. Карта для отслеживание передвижения уборочной техники.</p>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script>
+        // Создаем кастомную иконку для маркера
+        var carIcon = L.icon({
+            iconUrl: '/static/snowflake.png', // Путь к изображению машинки
+            iconSize: [25, 25], // Размер иконки
+            iconAnchor: [12, 12], // Точка привязки (центр иконки)
+            popupAnchor: [0, -41] // Точка привязки для всплывающего окна
+        });
+
+        // Координаты Белорусской государственной академии связи
+        var academyCoordinates = [53.924167, 27.666944];
+
+        var map = L.map('map').setView(academyCoordinates, 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Создаем маркер с кастомной иконкой
+        var marker = L.marker(academyCoordinates, { icon: carIcon }).addTo(map);
+
+        // Маршрут с заданными точками
+        var waypoints = [
+            L.latLng(53.924167, 27.666944), // Стартовая точка
+            L.latLng(53.926, 27.67),       // Первая точка маршрута
+            L.latLng(53.925, 27.675),      // Вторая точка маршрута
+            L.latLng(53.923, 27.68)        // Конечная точка маршрута
+        ];
+
+        var routeControl = L.Routing.control({
+            waypoints: waypoints,
+            routeWhileDragging: false,
+            createMarker: function() { return null; }
+        }).addTo(map);
+
+        var currentRoute;
+
+        routeControl.on('routesfound', function(e) {
+            currentRoute = e.routes[0];
+        });
+
+        var currentIndex = 0;
+        var step = 0;
+        function moveAlongRoute() {
+            if (!currentRoute) return;
+
+            var coords = currentRoute.coordinates;
+            if (currentIndex < coords.length - 1) {
+                var startLatLng = coords[currentIndex];
+                var endLatLng = coords[currentIndex + 1];
+
+                // Интерполяция
+                var lat = startLatLng.lat + (endLatLng.lat - startLatLng.lat) * step;
+                var lng = startLatLng.lng + (endLatLng.lng - startLatLng.lng) * step;
+
+                marker.setLatLng([lat, lng]);
+
+                step += 0.05;
+                if (step >= 1) {
+                    step = 0;
+                    currentIndex++;
+                }
+            } else {
+                currentIndex = 0;
+                step = 0;
+            }
+        }
+        setInterval(moveAlongRoute, 100); // 10 раз в секунду
+    </script>
+</body>
+</html>
+
